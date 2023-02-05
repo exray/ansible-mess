@@ -1,0 +1,13 @@
+---
+- name: Generate router config
+  template: src=router-template.rsc.j2 dest=roles/new-router-setup/files/tmp/{{inventory_hostname}}.rsc newline_sequence='\r\n'
+
+- name: Upload config to router
+  command: "sshpass -p '' scp -o StrictHostKeyChecking=no roles/new-router-setup/files/tmp/{{inventory_hostname}}.rsc admin@{{inventory_hostname}}:/flash/setup.rsc"  
+
+- name: Reset router and apply new config 
+  command: bash -c "cat roles/new-router-setup/files/reset_and_reboot.rsc | sshpass -p '' ssh -T admin@{{inventory_hostname}} -o StrictHostKeyChecking=no"
+  async: 6
+  poll: 0
+
+

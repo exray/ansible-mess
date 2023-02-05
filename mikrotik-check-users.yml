@@ -1,0 +1,13 @@
+---
+- name: Check users
+  user: mikroansible
+  hosts: mikrotik_production_all
+  connection: local
+  gather_facts: no
+  roles:
+    - check-users
+
+  tasks:  
+  - name: Print users
+    debug:
+      var: mtusers.stdout_lines

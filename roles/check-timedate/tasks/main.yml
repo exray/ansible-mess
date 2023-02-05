@@ -1,0 +1,13 @@
+---
+- name: Check Mikrotik time
+  command: bash -c "cat roles/check-timedate/files/check-time.rsc | ssh -T {{inventory_hostname}} -p {{ansible_ssh_port}}"  
+  register: mttime
+
+- name: Check Mikrotik date
+  command: bash -c "cat roles/check-timedate/files/check-date.rsc | ssh -T {{inventory_hostname}} -p {{ansible_ssh_port}}"  
+  register: mtdate
+
+- name: Check Mikrotik timezone
+  command: bash -c "cat roles/check-timedate/files/check-timezone.rsc | ssh -T {{inventory_hostname}} -p {{ansible_ssh_port}}"  
+  register: mttimezone
+

@@ -1,0 +1,23 @@
+:if ([/system script find name=dobackup] != "") do={/system script remove dobackup}
+:delay 3
+/system script
+add dont-require-permissions=no name=dobackup policy=\
+    ftp,read,write,policy,test source="local date [/system clock get date];\r\
+    \nlocal day [pick \$date begin=4 end=6];\r\
+    \nif (\$day={{day_of_month}}) do={\r\
+    \n  log info \"Creating monthly backup\";\r\
+    \n  local sysname [/system identity get name];\r\
+    \n  local sysver [/system package get system version];\r\
+    \n  local server [resolve \"{{email_server}}\"];\r\
+    \n  local port 25;\r\
+    \n  local from \"{{email_from}}\";\r\
+    \n  local to \"{{email_to}}\";\r\
+    \n  local subject \"\$sysname Mikrotik backup\";\r\
+    \n  local body \"\$sysname Mikrotik backup\\nRouterOS Version: \$sysver\";\r\
+    \n  local backupfile \"\$sysname.rsc\";\r\
+    \n  /export file=\$sysname\r\
+    \n  /tool e-mail send from=\$from to=\$to subject=\$body body=\$body server=\
+    \$server port=\$port file=\$backupfile;\r\
+    \n}"
+:if ([/system scheduler find name=backup_send_config] = "") do={/system scheduler add interval=1d name=backup_send_config on-event=dobackup policy=ftp,read,write,policy,test start-date=jan/01/2015 start-time=07:00:00}
+

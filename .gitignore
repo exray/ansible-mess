@@ -1,0 +1,9 @@
+*.retry
+*.cfg
+hosts
+roles/add-adminuser-remove-admin/vars/main.yml
+roles/add-backup-script/vars/main.yml
+roles/add-whitelist/vars/main.yml
+roles/change-admin-password/vars/main.yml
+roles/new-router-setup/templates/router-template.rsc.j2
+roles/*/files/tmp/*.*

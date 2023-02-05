@@ -1,0 +1,7 @@
+{% for ip in ips %}
+:if ([/ip firewall address-list find address={{ ip }}] = "") do={/ip firewall address-list add list=Trusted address={{ ip }}}
+{% endfor %}
+
+:if ([/ip firewall filter find src-address-list="Trusted"] = "") do={:log info "No whitelist rule, I'll add it"}
+:if ([/ip firewall filter find src-address-list="Trusted"] = "") do={/ip firewall filter add action=accept src-address-list=Trusted chain=input place-before=0}
+

@@ -1,0 +1,33 @@
+---
+- name: Prepare new router
+  user: mikroansible
+  hosts: mikrotik_new
+  connection: local
+  gather_facts: no
+  roles:
+    - new-router-setup
+
+  vars_prompt:
+    - name: "isp1_name"
+      prompt: "Укажите порт, куда подключен кабель провайдера (например: ether1)"
+      private: no
+
+    - name: internal_ip_address
+      prompt: "Укажите IP-адрес внутренней сети без последнего октета (например: 192.168.88)"
+      private: no
+
+    - name: external_ip_dns
+      prompt: "Укажите DNS-серверы. Если их несколько, то через запятую (например: 8.8.8.8,1.1.1.1)"
+      private: no
+
+    - name: identity
+      prompt: "Укажите имя роутера латиницей (например: MTmskcompany01)"
+      private: no
+
+    - name: wifi_2g_ssid
+      prompt: "Укажите имя ssid для wifi"
+      private: no
+
+    - name: wifi_2g_password
+      prompt: "Укажите пароль для wifi"
+      private: no

@@ -1,0 +1,13 @@
+---
+- name: Add ssh keys to remote hosts
+  hosts: zabbix_test
+  remote_user: root
+  become: yes
+
+  tasks:
+
+  - name: Copy id_rsa.pub key to authorized_hosts
+    authorized_key:
+      user: root
+      state: present
+      key: "{{ lookup('file', '/home/mikroansible/.ssh/id_rsa.pub') }}"

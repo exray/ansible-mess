@@ -1,0 +1,11 @@
+---
+- name: Install 7zip from local disk
+  hosts: windows
+  tasks:
+
+    - name: Install 7zip from local disk
+      win_package:
+        path: c:\7z1900-x64.exe
+        product_id: 7-Zip
+        arguments: /S
+        state: present

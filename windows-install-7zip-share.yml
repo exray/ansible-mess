@@ -1,0 +1,12 @@
+---
+- name: Install software
+  hosts: windows
+  tasks:
+    - name: Install 7zip from a network share specifying the credentials
+      win_package:
+        path: \\server.domain.local\distribs$\7zip\7z1900-x64.exe
+        product_id: 7-Zip
+        arguments: /S
+        state: present
+        user_name: username
+        user_password: password

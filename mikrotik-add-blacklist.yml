@@ -1,0 +1,9 @@
+---
+- name: Find mikrotik blacklist firewall rule
+  user: mikroansible
+  hosts: mikrotik_production_all
+  connection: local
+  gather_facts: no
+  roles:
+    - add-blacklist
+

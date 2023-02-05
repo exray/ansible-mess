@@ -1,0 +1,8 @@
+---
+- name: Install software
+  hosts: windows
+  tasks:
+    - name: Install skype from choco
+      win_chocolatey:
+        name: skype
+        state: latest

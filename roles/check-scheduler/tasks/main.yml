@@ -1,0 +1,4 @@
+---
+- name: Check Mikrotik scheduler
+  command: bash -c "cat roles/check-scheduler/files/check-scheduler.rsc | ssh -T {{inventory_hostname}} -p {{ansible_ssh_port}}"  
+  register: mtscheduler

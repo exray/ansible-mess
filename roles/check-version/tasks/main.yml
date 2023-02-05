@@ -1,0 +1,5 @@
+---
+- name: Check Mikrotik packages version
+  command: bash -c "cat roles/check-version/files/check-version.rsc | ssh -T {{inventory_hostname}} -p {{ansible_ssh_port}}"  
+  register: mtversion
+

@@ -1,0 +1,13 @@
+---
+- name: Check scripts
+  user: mikroansible
+  hosts: mikrotik_production_all
+  connection: local
+  gather_facts: no
+  roles:
+    - check-scripts
+
+  tasks:  
+  - name: Print scripts
+    debug:
+      var: mtscripts.stdout_lines

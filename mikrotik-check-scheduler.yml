@@ -1,0 +1,13 @@
+---
+- name: Check scheduler
+  user: mikroansible
+  hosts: mikrotik_production_all
+  connection: local
+  gather_facts: no
+  roles:
+    - check-scheduler
+
+  tasks:  
+  - name: Print scheduler
+    debug:
+      var: mtscheduler.stdout_lines

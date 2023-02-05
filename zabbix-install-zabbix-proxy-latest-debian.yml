@@ -1,0 +1,81 @@
+# После установки ОС и перед запуском плейбука:
+# 1. Укажи статичный адрес для ОС
+# 2. Пропиши hostname
+
+
+---
+- name: Upgrade zabbix proxy
+  hosts: zabbix_proxy
+  become: yes
+  remote_user: root
+
+  tasks:
+  - name: Install zabbix repo
+    apt:
+      deb: https://repo.zabbix.com/zabbix/6.0/debian/pool/main/z/zabbix-release/zabbix-release_6.0-1+debian11_all.deb
+
+  - name: Do apt update
+    apt:
+      update_cache: yes
+
+  - name: Install zabbix binaries
+    apt:
+      pkg:
+      - zabbix-proxy-sqlite3
+      - zabbix-get
+      - zabbix-agent
+      - zabbix-sql-scripts
+      # - ipmitool
+
+  - name: Create a sqlite directory if it does not exist
+    file:
+      path: /var/lib/sqlite
+      state: directory
+      mode: '0755'
+      owner: zabbix
+      group: zabbix
+
+  - name: Check that the zabbix DB exists
+    stat:
+      path: /var/lib/sqlite/zabbix.db
+    register: stat_result
+
+  - name: Create new DB
+    shell: sqlite3 /var/lib/sqlite/zabbix.db < /usr/share/doc/zabbix-sql-scripts/sqlite3/proxy.sql
+    when: not stat_result.stat.exists
+
+  - name: Change ownership of DB
+    file:
+      path: /var/lib/sqlite/zabbix.db
+      owner: zabbix
+      group: zabbix
+  
+  - name: Generate and push zabbix agent configuration file
+    template:
+      src: roles/zabbix/zabbix_agent/zabbix_agent.conf.j2
+      dest: /etc/zabbix/zabbix_agentd.conf
+
+  - name: Generate and push zabbix proxy configuration file
+    template:
+      src: roles/zabbix/zabbix_proxy/zabbix_proxy.conf.j2
+      dest: /etc/zabbix/zabbix_proxy.conf
+
+  - name: Make sure that zabbix agent service is started and enabled
+    systemd:
+      name: zabbix-agent
+      state: restarted
+      enabled: yes
+
+  - name: Make sure that zabbix proxy service is started and enabled
+    systemd:
+      name: zabbix-proxy
+      state: restarted
+      enabled: yes
+
+# End of base config
+
+# [] Установи ipmitool
+# [] Скопируй скрипт из /usr/lib/zabbix/externalscripts/ipmi.sh, сделай его исполняемым
+# [] Настрой ssh-аутентификацию по ключам на asterisk
+# ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
+# ssh-copy-id -i ~/.ssh/id_rsa.pub root@asterisk

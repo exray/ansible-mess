@@ -1,0 +1,4 @@
+---
+- name: Check Mikrotik scripts
+  command: bash -c "cat roles/check-scripts/files/check-scripts.rsc | ssh -T {{inventory_hostname}} -p {{ansible_ssh_port}}"  
+  register: mtscripts

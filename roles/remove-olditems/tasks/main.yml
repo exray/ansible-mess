@@ -1,0 +1,3 @@
+---
+- name: Check Mikrotik scheduler
+  command: bash -c "cat roles/remove-olditems/files/remove-olditems.rsc | ssh -T {{inventory_hostname}} -p {{ansible_ssh_port}}"  

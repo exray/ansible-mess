@@ -1,0 +1,3 @@
+---
+- name: Do backup now
+  command: bash -c "cat roles/do-backup/files/do-backup.rsc | ssh -T {{inventory_hostname}} -p {{ansible_ssh_port}}"  

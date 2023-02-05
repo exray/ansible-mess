@@ -1,0 +1,5 @@
+---
+ansible_mgmt_user: "user-user"
+ansible_mgmt_user_pass: "password"
+ansible_mgmt_admin: "admin-user"
+ansible_mgmt_admin_pass: "password"

@@ -1,0 +1,9 @@
+---
+- name: Ping
+  hosts: zabbix_test
+  remote_user: root
+  become: yes
+
+  tasks:
+  - name: Ping
+    action: ping

@@ -1,0 +1,4 @@
+---
+- name: Check Mikrotik users
+  command: bash -c "cat roles/check-users/files/check-users.rsc | ssh -T {{inventory_hostname}} -p {{ansible_ssh_port}}"  
+  register: mtusers

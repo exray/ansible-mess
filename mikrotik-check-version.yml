@@ -1,0 +1,13 @@
+---
+- name: Check routeros version
+  user: mikroansible
+  hosts: mikrotik_production_all
+  connection: local
+  gather_facts: no
+  roles:
+    - check-version
+
+  tasks:  
+  - name: Print MTversion    
+    debug:
+      var: mtversion.stdout

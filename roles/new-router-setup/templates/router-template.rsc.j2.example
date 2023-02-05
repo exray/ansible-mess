@@ -1,0 +1,163 @@
+:delay delay-time=15s
+
+###  FUNCTIONS ###
+
+:global ip2array do={
+    :local ip [:toip $1]
+    :local array [:toarray ""]
+    :if ([:typeof $ip] != "ip") do={:return $array}
+    :set ($array->0) $ip
+    :set ($array->1) [:tonum (($ip >> 24) & 0.0.0.255)]
+    :set ($array->2) [:tonum (($ip >> 16) & 0.0.0.255)]
+    :set ($array->3) [:tonum (($ip >> 8) & 0.0.0.255)]
+    :set ($array->4) [:tonum (($ip >> 0) & 0.0.0.255)]
+    :return $array
+}
+# example for print 2nd octet (49) from 85.49.74.128
+# :put ([$ip2array 85.49.74.128]->2)
+# https://forum.mikrotik.com/viewtopic.php?f=9&t=85205&p=431507#p880374
+
+### /FUNCTIONS ###
+
+:global IspPort "{{isp1_port}}";
+:global LanAddress "{{internal_lan_address}}";
+:global LanSubnet (([$ip2array $LanAddress]->1).".".([$ip2array $LanAddress]->2).".".([$ip2array $LanAddress]->3));
+:global WanSubnet (([$ip2array $LanAddress]->1).".".([$ip2array $LanAddress]->2).".".([$ip2array $LanAddress]->3+1));
+
+/interface bridge
+    add arp=enabled fast-forward=yes name=bridge-blackhole
+    add arp=enabled fast-forward=yes name=bridge-wlan
+    add arp=enabled fast-forward=yes name=bridge-local
+
+#Add all ethernet interfaces to lan bridge except ISP one
+:foreach etherports in=[/interface find where !(slave=yes  || name=$IspPort || name~"bridge")] do={
+    :local TmpPortName [/interface get $etherports name];
+    :if ([/interface get $etherports type] = "ether") do={
+        /interface bridge port add bridge=bridge-local interface=$TmpPortName;
+    }
+}
+
+#Add all wireless ports to wlan bridge
+
+:foreach wlanports in=[/interface find where (name~"wlan" && name!="bridge-wlan")] do={
+    :local TmpPortName [/interface get $wlanports name];
+    :if ([/interface get $wlanports type] = "wlan") do={
+        /interface bridge port add bridge=bridge-wlan interface=$TmpPortName;
+    }
+}
+###  CAPsMAN ###
+
+/caps-man channel
+    add band=2ghz-b/g/n frequency=2437 name={{wifi_2g_ssid}}-2g
+/caps-man datapath
+    add bridge=bridge-local client-to-client-forwarding=yes local-forwarding=yes name={{wifi_2g_ssid}}
+/caps-man security
+    add authentication-types=wpa2-psk encryption=aes-ccm name={{wifi_2g_ssid}} passphrase={{wifi_2g_password}}
+/caps-man configuration
+    add channel={{wifi_2g_ssid}}-2g country=russia datapath={{wifi_2g_ssid}} distance=indoors hw-protection-mode=rts-cts installation=indoor mode=ap name={{wifi_2g_ssid}}-2g rx-chains=0,1,2 security={{wifi_2g_ssid}} ssid={{wifi_2g_ssid}} tx-chains=0,1,2
+/caps-man manager
+    set enabled=yes
+/caps-man provisioning
+    add action=create-dynamic-enabled master-configuration={{wifi_2g_ssid}}-2g name-format=prefix-identity name-prefix=2G
+
+### /CAPsMAN ###
+
+/interface ethernet
+    set [ find default-name={{isp1_port}} ] name={{isp1_port}}-ISP1
+/interface wireless security-profiles
+    set [ find default=yes ] supplicant-identity=MikroTik
+/interface list
+    add name=LAN
+    add name=WAN
+/interface list member
+    add interface=ether1-ISP1 list=WAN
+    add interface=ether2 list=LAN
+    add interface=ether3 list=LAN
+    add interface=ether4 list=LAN
+    add interface=ether5 list=LAN
+/ip cloud
+    set update-time=no
+/ip pool
+    add name=lan_dhcp_pool ranges="$LanSubnet.11-$LanSubnet.199"
+    add name=wlan_dhcp_pool ranges="$WanSubnet.11-$WanSubnet.199"
+/ip dhcp-server
+    add address-pool=lan_dhcp_pool disabled=no interface=bridge-local lease-time=1w name=lan_dhcp
+    add address-pool=wlan_dhcp_pool disabled=no interface=bridge-wlan lease-time=1w name=wlan_dhcp
+/ip neighbor discovery-settings
+    set discover-interface-list=none
+/ip address
+    add address="$LanSubnet.1/24" interface=bridge-local network="$LanSubnet.0"
+    add address="$WanSubnet.1/24" interface=bridge-wlan network="$WanSubnet.0"
+# /ip dhcp-client
+#     add interface=ether1-ISP1 disabled=no add-default-route=no
+/ip dhcp-server network
+    add address="$LanSubnet.0/24" dns-server={{external_ip_dns}} gateway="$LanSubnet.1"
+    add address="$WanSubnet.0/24" dns-server={{external_ip_dns}} gateway="$WanSubnet.1"
+/ip firewall address-list
+    add address=1.1.1.1 comment=clouflare_1.1 list=Trusted
+    add address=10.254.0.0/24 comment=testlan list=Trusted
+/ip firewall filter
+    add action=accept chain=input comment="Allow all from trusted source" in-interface={{isp1_port}}-ISP1 src-address-list=Trusted
+    add action=accept chain=forward comment="Allow all from trusted source" in-interface={{isp1_port}}-ISP1 src-address-list=Trusted
+    add action=accept chain=forward comment="Allow established and related connections" connection-state=established,related in-interface={{isp1_port}}-ISP1
+    add action=drop chain=forward comment="Drop infected users" dst-port=25 log=yes log-prefix=smtp_spam protocol=tcp src-address-list=spammer
+    add action=drop chain=forward comment="Drop invalid connections" connection-state=invalid
+    add action=accept chain=input comment="Allow winbox, ssh" disabled=yes dst-port=8291,22 in-interface={{isp1_port}}-ISP1 protocol=tcp src-address-list=Trusted
+    add action=accept chain=input comment="Allow established and related connections" connection-state=established,related in-interface={{isp1_port}}-ISP1
+    add action=drop chain=forward comment="Drop all from WAN not DSTNATed" connection-nat-state=!dstnat connection-state=new in-interface={{isp1_port}}-ISP1
+    add action=accept chain=input comment="Allow ping" protocol=icmp
+    add action=drop chain=input comment="Drop all from WAN" in-interface={{isp1_port}}-ISP1
+/ip firewall nat
+    add action=masquerade chain=srcnat ipsec-policy=out,none out-interface={{isp1_port}}-ISP1
+/ip firewall service-port
+    set ftp disabled=yes
+    set tftp disabled=yes
+    set irc disabled=yes
+    set h323 disabled=yes
+    set sip disabled=yes
+/ip ipsec profile
+    add dh-group=modp2048,modp1536 lifetime=3h name=kerio dpd-interval=2m30s
+/ip ipsec peer
+    add address=peer.address name=peer.address profile=kerio disabled=yes
+/ip ipsec proposal
+    add enc-algorithms=aes-128-cbc lifetime=1h name=kerio pfs-group=none
+/ip ipsec identity
+    add peer=peer.address remote-id=ignore secret="CH4NG3M3N0W"
+/ip ipsec policy
+    add comment="subnet1" dst-address=10.254.1.0/24 level=unique peer=peer.address src-address="$LanSubnet.0/24" tunnel=yes disabled=yes
+    add comment="subnet2" dst-address=172.26.0.0/24 level=unique peer=peer.address src-address="$LanSubnet.0/24" tunnel=yes disabled=yes
+/ip route
+    add distance=1 dst-address=10.254.1.0/24 gateway=bridge-local disabled=yes pref-src="$LanSubnet.1"
+    add distance=254 dst-address=0.0.0.0/8 gateway=bridge-blackhole comment="BOGON"
+    add distance=254 dst-address=10.0.0.0/8 gateway=bridge-blackhole comment="BOGON"
+    add distance=254 dst-address=127.0.0.0/8 gateway=bridge-blackhole comment="BOGON"
+    add distance=254 dst-address=169.254.0.0/16 gateway=bridge-blackhole comment="BOGON"
+    add distance=254 dst-address=172.16.0.0/12 gateway=bridge-blackhole comment="BOGON"
+    add distance=254 dst-address=192.168.0.0/16 gateway=bridge-blackhole comment="BOGON"
+    add distance=254 dst-address=192.0.2.0/24 gateway=bridge-blackhole comment="BOGON"
+    add distance=254 dst-address=192.88.99.0/24 gateway=bridge-blackhole comment="BOGON"
+    add distance=254 dst-address=192.18.0.0/15 gateway=bridge-blackhole comment="BOGON"
+    add distance=254 dst-address=192.51.100.0/24 gateway=bridge-blackhole comment="BOGON"
+    add distance=254 dst-address=203.0.113.0/24 gateway=bridge-blackhole comment="BOGON"
+    add distance=254 dst-address=224.0.0.0/4 gateway=bridge-blackhole comment="BOGON"
+    add distance=254 gateway=bridge-blackhole comment="Emergency route"
+/ip service
+    set telnet disabled=yes
+    set ftp disabled=yes
+    set www disabled=yes
+    set api disabled=yes
+    set api-ssl disabled=yes
+/system clock
+    set time-zone-name=Europe/Moscow
+/system identity
+    set name={{identity}}
+/system ntp client
+    set enabled=yes primary-ntp=89.109.251.21 secondary-ntp=88.147.254.227
+/system package update
+    set channel=long-term
+/system routerboard settings
+    set auto-upgrade=yes
+/tool romon
+    set enabled=yes
+/tool romon port
+    add disabled=no forbid=yes interface={{isp1_port}}-ISP1

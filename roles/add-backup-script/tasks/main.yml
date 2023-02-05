@@ -1,0 +1,13 @@
+---
+
+- name: Generate .rsc
+  template: src=add-backup-script.rsc.j2 dest=roles/add-backup-script/files/tmp/{{inventory_hostname}}.rsc
+
+- name: Upload .rsc script
+  command: scp -P {{ansible_ssh_port}} roles/add-backup-script/files/tmp/{{inventory_hostname}}.rsc {{ansible_ssh_user}}@{{inventory_hostname}}:/backupscript.rsc
+
+- name: Install script
+  command: "ssh -T -p {{ansible_ssh_port}} {{ansible_ssh_user}}@{{inventory_hostname}} '/import file=backupscript.rsc'"
+
+- name: Delete temp .rsc file
+  file: path=roles/add-backup-script/files/tmp/{{inventory_hostname}}.rsc state=absent

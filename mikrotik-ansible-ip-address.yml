@@ -1,0 +1,16 @@
+---
+- name: Test routeros_command
+  hosts: mikrotik_production_all
+  gather_facts: false
+
+  tasks:
+    - name: run command on remote devices
+      routeros_command:
+        commands: /ip address print
+      register: ip_print
+      vars:
+        ansible_command_timeout: 30
+
+    - name: debug print
+      debug:
+        var: ip_print.stdout_lines

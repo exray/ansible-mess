@@ -1,0 +1,11 @@
+---
+
+- name: Generate .rsc
+  template: src=add-blacklist.rsc.j2 dest=roles/add-blacklist/files/tmp/{{inventory_hostname}}.rsc
+
+- name: Run .rsc script
+  command: bash -c "cat roles/add-blacklist/files/tmp/{{inventory_hostname}}.rsc | ssh -T {{inventory_hostname}} -p {{ansible_ssh_port}}"  
+
+- name: Delete temp .rsc file
+  file: path=roles/add-blacklist/files/tmp/{{inventory_hostname}}.rsc state=absent
+

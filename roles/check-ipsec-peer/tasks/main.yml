@@ -1,0 +1,5 @@
+---
+- name: Check Mikrotik IPsec peers
+  command: bash -c "cat roles/check-ipsec-peer/files/check-ipsec-peer.rsc | ssh -T {{inventory_hostname}} -p {{ansible_ssh_port}}"  
+  register: mtipsecpeer
+

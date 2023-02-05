@@ -1,0 +1,5 @@
+---
+day_of_month: "15"
+email_server: "mail.server.com"
+email_from: "mikrotik@server.com"
+email_to: "admin@server.com"

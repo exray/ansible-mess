@@ -1,0 +1,9 @@
+---
+- name: Run backup
+  user: mikroansible
+  hosts: mikrotik_production_all
+  connection: local
+  gather_facts: no
+  roles:
+    - do-backup
+

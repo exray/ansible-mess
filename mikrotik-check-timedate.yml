@@ -1,0 +1,22 @@
+---
+- name: Check timedate
+  user: mikroansible
+  hosts: mikrotik_production_all
+  connection: local
+  gather_facts: no
+  roles:
+    - check-timedate
+
+  tasks:  
+  - name: Print MTtime
+    debug:
+      var: mttime.stdout
+
+  - name: Print MTdate
+    debug:
+      var: mtdate.stdout
+
+  - name: Print MTtimezone
+    debug:
+      var: mttimezone.stdout
+

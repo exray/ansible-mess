@@ -1,0 +1,53 @@
+---
+- name: Upgrade zabbix proxy
+  hosts: zabbix_proxy
+  become: yes
+  remote_user: root
+
+  tasks:
+
+  - name: Yum clean all
+    command: yum clean all
+
+  - name: Stop zabbix proxy
+    service:
+      name: zabbix-proxy
+      state: stopped
+
+  - name: Yum upgrade zabbix packets
+    yum:
+      name: 
+        - zabbix-proxy-sqlite3
+        - zabbix-get
+        - zabbix-agent
+      state: latest
+      update_only: yes
+      update_cache: yes
+
+  - name: Remove old DB
+    file:
+      path: /var/lib/sqlite/zabbix.db
+      state: absent
+
+  - name: Unarchive new DB
+    command: gunzip -N /usr/share/doc/zabbix-proxy-sqlite3-5.0.1/schema.sql.gz
+
+  - name: Create new DB
+    shell: sqlite3 /var/lib/sqlite/zabbix.db < /usr/share/doc/zabbix-proxy-sqlite3-5.0.1/schema.sql
+
+  - name: Change ownership of DB folder
+    file:
+      path: /var/lib/sqlite/
+      owner: zabbix
+      group: zabbix
+
+  - name: Change ownership of DB
+    file:
+      path: /var/lib/sqlite/zabbix.db
+      owner: zabbix
+      group: zabbix
+
+  - name: Start zabbix proxy
+    service:
+      name: zabbix-proxy
+      state: started

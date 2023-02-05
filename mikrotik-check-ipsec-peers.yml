@@ -1,0 +1,13 @@
+---
+- name: Print IPsec peers config
+  user: mikroansible
+  hosts: mikrotik_production_all
+  connection: local
+  gather_facts: no
+  roles:
+    - check-ipsec-peer
+
+  tasks:  
+  - name: Print MT IPsec peer config
+    debug:
+      var: mtipsecpeer.stdout

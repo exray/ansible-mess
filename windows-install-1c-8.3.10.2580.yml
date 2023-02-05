@@ -1,0 +1,22 @@
+---
+- name: Install software
+  hosts: windows
+  gather_facts: no
+  tasks:
+
+    - name: Copy distrib to temp folder
+      win_copy:
+        src: \\server.domain.local\distribs\1C\ThinClient\setuptc_8_3_10_2580
+        dest: c:\temp
+        remote_src: yes
+
+    - name: Install 1c from temp
+      win_package:
+        path: c:\temp\setuptc_8_3_10_2580\1CEnterprise 8 Thin client.msi
+        product_id: {C1AA873B-28D7-4BB2-9C2A-BB99EB11D602}
+        state: present
+
+    - name: Remove distrib from temp folder
+      win_file:
+        path: c:\temp\setuptc_8_3_10_2580
+        state: absent

@@ -1,0 +1,10 @@
+/system backup save name=before_blacklist_add
+:delay 5
+
+{% for ip in ips %}
+:if ([/ip firewall address-list find address={{ ip }}] = "") do={/ip firewall address-list add list=blacklist address={{ ip }} }
+{% endfor %}
+
+:if ([/ip firewall filter find src-address-list="blacklist"] = "") do={:log info "No blacklist rule, I'll add it"}
+:if ([/ip firewall filter find src-address-list="blacklist"] = "") do={/ip firewall filter add action=drop src-address-list=blacklist chain=input place-before=0}
+

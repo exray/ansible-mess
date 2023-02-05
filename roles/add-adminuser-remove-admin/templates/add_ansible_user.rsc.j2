@@ -1,0 +1,6 @@
+/system backup save name=before_admin_disabled
+:if ([/user find name={{ansible_mgmt_user}}] ="") do={ :log info "User {{ansible_mgmt_user}} not found... Add it"}
+:if ([/user find name={{ansible_mgmt_user}}] ="") do={/user add name={{ansible_mgmt_user}} group=read password={{ansible_mgmt_user_pass}}}
+:if ([/user find name={{ansible_mgmt_admin}}] ="") do={ :log info "Administrator {{ansible_mgmt_admin}} not found... Add it"}
+:if ([/user find name={{ansible_mgmt_admin}}] ="") do={/user add name={{ansible_mgmt_admin}} group=full password="{{ansible_mgmt_admin_pass}}"}
+:if ([/user find name=admin] != "") do={/user disable admin}

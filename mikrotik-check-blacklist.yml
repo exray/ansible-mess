@@ -1,0 +1,13 @@
+---
+- name: Find mikrotik blacklist firewall rule
+  user: mikroansible
+  hosts: mikrotik_production_all
+  connection: local
+  gather_facts: no
+  roles:
+    - check-blacklist
+
+  tasks:  
+  - name: Print firewall rule
+    debug:
+      var: mtblacklist.stdout_lines
