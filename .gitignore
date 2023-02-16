@@ -1,5 +1,4 @@
 *.retry
-*.cfg
 hosts
 roles/add-adminuser-remove-admin/vars/main.yml
 roles/add-backup-script/vars/main.yml
